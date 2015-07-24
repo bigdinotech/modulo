@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Modulo Control Panel</title>
+	<script src="/socket.io/socket.io.js"></script>
+	<style>
+		.moduledatagrid {
+			background-color: #82CAFA;
+		}
+		.moduledatalabeltd {
+			text-align: left;
+			background-color: #82CAFA;
+			font-size:x-large;
+		}
+		.moduledatatd {
+			text-align: center;
+			background-color: #82CAFA;
+			font-size:x-large;
+		}
+		
+		td {
+			padding: 2px;
+		}
+
+		
+		body {
+			background-color: #82CAFA;
+		}
+
+		iframe{
+		   width: 320px;
+		   height: 220px;
+		   overflow: hidden;
+		   pointer-events:none;
+		}
+
+	</style>
+</head>
+<body>
+	<form method="post" name="banner" target="_self">
+			<h1>
+					Intel Edison - Home Automation 
+			</h1>
+	</form>
+	<table class="moduledatagrid" >
+		<tr>
+			<td id="controlmodule">
+				<form method="post" name="ControlForm" target="_self">
+					<table id="controlmoduletable">
+						<tr>
+							<th colspan=2 align=center>
+								<p>Control Module</p>
+							</th>
+						</tr>
+						<tr>
+							<td class="moduledatalabeltd">
+								<p>Direction:</p>
+							</td>
+							<td id="controldirection" class="moduledatatd">
+							</td>
+						</tr>
+						<tr>
+							<td class="moduledatalabeltd">
+								<p>Speed:</p>
+							</td>
+							<td id="controlspeed" class="moduledatatd">
+							</td>
+						</tr>
+					</table>
+					
+				</form>
+			</td>
+			<td id="powermodule">
+				<form method="post" name="OutdoorForm" target="_self">
+					<table id="powermoduletable">
+						<tr>
+							<th colspan=2 align=center>
+								<p>Power Module</p>
+							</th>
+						</tr>
+						<tr>
+							<td class="moduledatalabeltd">
+								<p>Battery Voltage Level:</p>
+							</td>
+							<td id="batteryvalue" class="moduledatatd">
+							</td>
+						</tr>
+					</table>
+	
+				</form>
+			</td>
+		</tr>
+		<tr>
+			<form action="">
+				<input type="radio" name="tempRadio" value="celsius">Celsius<br>
+				<input type="radio" name="tempRadio" value="fahrenheit">Fahrenheit
+			</form>
+		</tr>
+	</table>
+
+	<script>
+
+	var headerValue = 170;
+	var isFahrenheit = 0;
+
+	var socket = io.connect();
+	socket.on('server-event-info', function (data) {
+	console.log(data);
+	 
+	var mID = data.charCodeAt(1);
+	var dataLength = data.charCodeAt(2);
+	var tRadio = document.getElementsByName("tempRadio");
+	for (var i = 0, length = tRadio.length; i < length; i++) 
+	{
+		if(tRadio[i].checked)
+		{
+			isFahrenheit = i;
+			console.log("radio selection: " + i);
+			break;
+		}
+	}
+	var tempUnit = "C";
+	if(isFahrenheit)
+	{
+		tempUnit = "F";
+	}
+	switch(mID)
+	{
+	case 1:
+		//control module
+		console.log("control module");
+		var dir = data.charAt(3);
+		var spd = data.charCodeAt(4);
+		var displayDir = document.getElementById('controldirection');
+		displayDir.textContent = dir;
+		var displaySpd = document.getElementById('controlspeed');
+		displaySpd.textContent = spd;
+		break;
+	case 10:
+		//thermostat
+		console.log("thermostat module");
+		var temp = data.charCodeAt(3);
+		var humidity = data.charCodeAt(4);
+		var mode = data.charCodeAt(5);
+		var targetTemp = data.charCodeAt(6);
+		if(isFahrenheit)
+		{
+			temp = celsiusToFahrenheit(temp);
+			targetTemp = celsiusToFahrenheit(targetTemp);
+		}
+		var displayTemp = document.getElementById('thermostattemperature');
+		displayTemp.textContent = temp + tempUnit;
+		var displayHumidity = document.getElementById('thermostathumidity');
+		displayHumidity.textContent = humidity + "%";
+		var displayMode = document.getElementById('thermostatmode');
+		var displayTargetTemperature = document.getElementById('targetthermostattemperature');
+		displayTargetTemperature.textContent = targetTemp + tempUnit;
+		switch(mode)
+		{
+			case 0:
+				displayMode.textContent = "Off";
+				break;
+			case 1:
+				displayMode.textContent = "Cool";
+				break;
+			case 2:
+				displayMode.textContent = "Heat";
+				break;
+			case 3:
+				displayMode.textContent = "Auto";
+				break;
+			case 4:
+				displayMode.textContent = "UNK";
+				break;
+			default:
+				break;
+		}
+		break;
+	case 18:
+		console.log("power module");
+		var batteryvalue = data.charCodeAt(3);
+		batteryvalue *= 4;
+		batteryvalue = (batteryvalue * 5.0)/(1024.0);
+		batteryvalue *= 6.315;
+		batteryvalue = batteryvalue.toFixed(2);
+		var displaybatteryvalue = document.getElementById('batteryvalue');
+		displaybatteryvalue.textContent = batteryvalue + ' V';
+		break;
+	case 23:
+		//garage module
+		console.log("garage module");
+		var temp = data.charCodeAt(3);
+		var humidity = data.charCodeAt(4);
+		var gdoorstate = data.charCodeAt(5);
+		if(isFahrenheit)
+		{
+			temp = celsiusToFahrenheit(temp);
+		}
+		var displayTemp = document.getElementById('garagetemperature');
+		displayTemp.textContent = temp + tempUnit;
+		var displayHumidity = document.getElementById('garagehumidity');
+		displayHumidity.textContent = humidity + "%";
+		var displayStatus = document.getElementById('garagedoor');
+		if(gdoorstate == 1)
+		{
+			displayStatus.textContent = "closed";
+			displayStatus.bgcolor ="33CC33";
+		}
+		else
+		{
+			displayStatus.textContent = "open";
+			displayStatus.bgcolor ="FF0000";
+		}
+		break;
+	case 24:
+		console.log("outdoor module");
+		var temp = data.charCodeAt(3);
+		var humidity = data.charCodeAt(4);
+		var pirState = data.charCodeAt(5);
+		if(isFahrenheit)
+		{
+			temp = celsiusToFahrenheit(temp);
+		}
+		var displayTemp = document.getElementById('outdoortemperature');
+		displayTemp.textContent = temp + tempUnit;
+		var displayHumidity = document.getElementById('outdoorhumidity');
+		displayHumidity.textContent = humidity + "%";
+		var displayStatus = document.getElementById('outdoorPresence');
+		if(pirState == 1)
+		{
+			displayStatus.textContent = "Presence detected";
+		}
+		else
+		{
+			displayStatus.textContent = "Nothing Detected";
+		}
+	default:
+		break;
+	}
+	});
+
+	function garageDoorButton()
+	{
+		//socket.emit("command", "tgdoor*");
+		var cmdPacket = [];
+		var cmdPacketString = "";
+		var cmdChecksum = 0;
+		var modID = 23;
+		cmdChecksum += (modID & 0xFF);
+		var cmdLength = 1;
+		cmdChecksum += (cmdLength & 0xFF);
+		var command = 'g';
+		cmdChecksum += (command.charCodeAt(0) & 0xFF);
+
+		cmdPacket[0] = (headerValue & 0xFF);
+		cmdPacket[1] = (modID & 0xFF);
+		cmdPacket[2] = (cmdLength & 0xFF);
+		cmdPacket[3] = (command.charCodeAt(0) & 0xFF);
+		cmdPacket[cmdLength+3] = (cmdChecksum & 0xFF)
+
+		for(i = 0; i < cmdPacket.length; i++)
+		{
+			cmdPacketString +=  cmdPacket[i] + " ";		
+		}
+
+		cmdPacketString = cmdPacketString.trim();
+		sendData(cmdPacketString);
+		console.log(cmdPacketString);
+	}
+
+	function garageLightButton()
+	{
+		//socket.emit("command", "tglight*");
+		var cmdPacket = [];
+		var cmdPacketString = "";
+		var cmdChecksum = 0;
+		var modID = 23;
+		cmdChecksum += (modID & 0xFF);
+		var cmdLength = 1;
+		cmdChecksum += (cmdLength & 0xFF);
+		var command = 'l';
+		cmdChecksum += (command.charCodeAt(0) & 0xFF);
+
+		cmdPacket[0] = (headerValue & 0xFF);
+		cmdPacket[1] = (modID & 0xFF);
+		cmdPacket[2] = (cmdLength & 0xFF);
+		cmdPacket[3] = (command.charCodeAt(0) & 0xFF);
+		cmdPacket[cmdLength+3] = (cmdChecksum & 0xFF)
+
+		for(i = 0; i < cmdPacket.length; i++)
+		{
+			cmdPacketString +=  cmdPacket[i] + " ";		
+		}
+
+		cmdPacketString = cmdPacketString.trim();
+		sendData(cmdPacketString);
+		console.log(cmdPacketString);
+	}
+
+	function sendData(packet)
+	{
+		packet += "*";
+		socket.emit("command", packet);
+	}
+
+	function celsiusToFahrenheit(cTemp)
+	{
+		return Math.round((cTemp*9.0/5.0) + 32);
+	}
+
+	function thermostatOffButton()
+	{
+		var mode = 0;
+		termostatCommand(mode);
+	}
+
+	function thermostatCoolButton()
+	{
+		var mode = 1;
+		termostatCommand(mode);
+	}
+
+	function thermostatHeatButton()
+	{
+		var mode = 2;
+		termostatCommand(mode);
+	}
+
+	function thermostatAutoButton()
+	{
+		var mode = 3;
+		termostatCommand(mode);
+	}
+
+	function termostatCommand(mode)
+	{
+		var cmdPacket = [];
+		var cmdPacketString = "";
+		var cmdChecksum = 0;
+		var modID = 10;
+		cmdChecksum += (modID & 0xFF);
+		var cmdLength = 3;
+		if(mode == 3)
+		{
+			cmdLength = 4;
+		}
+		cmdChecksum += (cmdLength & 0xFF);
+		var thermostatCommand = 'c';
+		if(isFahrenheit)
+		{
+			thermostatCommand = 'f';
+		}
+		cmdChecksum += (thermostatCommand.charCodeAt(0) & 0xFF);
+		//var mode = 1;
+		cmdChecksum += (mode & 0xFF);
+		var targetTemp = parseInt(document.getElementById('changetargetthermostattemperature').value);
+		var targetTemp2 = parseInt(document.getElementById('changetargetthermostattemperature2').value);
+		cmdChecksum += (targetTemp & 0XFF);
+		if(mode == 3)
+		{
+			cmdChecksum += (targetTemp2 & 0XFF);
+		}
+		cmdPacket[0] = (headerValue & 0xFF);
+		cmdPacket[1] = (modID & 0xFF);
+		cmdPacket[2] = (cmdLength & 0xFF);
+		cmdPacket[3] = (thermostatCommand.charCodeAt(0) & 0xFF);
+		cmdPacket[4] = (mode & 0xFF);
+		cmdPacket[5] = (targetTemp & 0XFF);
+		if(mode == 3)
+		{
+			cmdPacket[6] = (targetTemp2 & 0XFF);
+		}
+		cmdPacket[cmdLength+3] = (cmdChecksum & 0xFF);
+		for(i = 0; i < cmdPacket.length; i++)
+		{
+			cmdPacketString +=  cmdPacket[i] + " ";
+			//cmdPacketString +=  String.fromCharCode(cmdPacket[i]);
+			//console.log((String.fromCharCode(cmdPacket[i])).charCodeAt(0));
+			
+		}
+		cmdPacketString = cmdPacketString.trim();
+		sendData(cmdPacketString);
+		console.log(cmdPacketString);
+		//sendData(cmdPacket);
+	}
+
+	</script>
+	<script>
+		document.getElementById("toggleGarageDoor").onclick =  garageDoorButton;
+		document.getElementById("toggleGarageLight").onclick =  garageLightButton;
+		document.getElementById("thermostatOffModeButton").onclick =  thermostatOffButton;
+		document.getElementById("thermostatCoolModeButton").onclick =  thermostatCoolButton;
+		document.getElementById("thermostatHeatModeButton").onclick =  thermostatHeatButton;
+		document.getElementById("thermostatAutoModeButton").onclick =  thermostatAutoButton;
+	</script>
+</body>
+
+</html>
+

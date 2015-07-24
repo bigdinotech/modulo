@@ -1,0 +1,4 @@
+socket.io
+cheerio
+htpasswd
+http-auth
