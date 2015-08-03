@@ -88,34 +88,6 @@ void *commandHandler(void *arg)
     }
     pthread_mutex_unlock(&commandQueueMutex);
 
-    //TODO: command hash table
-    if(cmd == "tgdoor")
-    {
-      packetLength = 1;
-      byte *dataBuff;
-      dataBuff = new byte[1];
-      dataBuff[0] = 'g';
-      sendData(dataBuff, 23, packetLength);
-      delete [] dataBuff;
-      if(DEBUG)
-      {
-        Serial.println("toggle garage door");
-      }
-    }
-    else if(cmd == "tglight")
-    {
-      packetLength = 1;
-      byte *dataBuff;
-      dataBuff = new byte[1];
-      dataBuff[0] = 'l';
-      sendData(dataBuff,23, packetLength );
-      delete [] dataBuff;
-      if(DEBUG)
-      {
-        Serial.println("toggle garage light");
-      }
-    }
-    else
     {
       //parse Command
       int cmdStringLength = cmd.length();
@@ -133,14 +105,14 @@ void *commandHandler(void *arg)
           }
           else
           {
-            //convert byString into int and push into byte array
+            //convert byteString into byte array
             cmdBuffer[byteCounter] = (byte)byteString.toInt(); 
             byteCounter++;
             byteString = "";
           }
         }
-        cmdBuffer[byteCounter] = (byte)byteString.toInt(); 
-        byteCounter++;
+        //cmdBuffer[byteCounter] = (byte)byteString.toInt(); 
+        //byteCounter++;
         dataBuff = new byte[byteCounter];
         packetLength = byteCounter;
         if(DEBUG)
@@ -151,22 +123,17 @@ void *commandHandler(void *arg)
         for(int i = 0; i < byteCounter; i++)
         {
           dataBuff[i] = cmdBuffer[i];
-          if(DEBUG)
-          {
-            Serial.print(cmdBuffer[i]);
-            Serial.print(" ");
-          }
         }
-        if(DEBUG)
+
+        if(dataBuff[1] != 0)
         {
-          for(int i = 0; i < sizeof(dataBuff); i++)
-          {
-            Serial.print(dataBuff[i]);
-            Serial.print(" ");
-          }
-          Serial.println();
+          //command is for other modules
+          sendDataToModule(dataBuff,dataBuff[1], packetLength);
         }
-        sendData(dataBuff,dataBuff[1], packetLength);
+        else
+        {
+          //command is for dataFusion module
+        }
         delete [] dataBuff;
       }
     }

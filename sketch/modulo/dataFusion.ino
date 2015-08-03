@@ -254,6 +254,10 @@ void *udpHandler(void *arg)
         if(msg_buffer[i] == '*')
         {
           commandFound = true;
+          if(DEBUG)
+          {  
+            Serial.print("command received!!!");
+          }
         }
         else
         {
@@ -271,6 +275,7 @@ void *udpHandler(void *arg)
         Serial.println("***************************************************");     
         Serial.println("Received packet from %s:%d\nData:");
         Serial.println(inet_ntoa(cli_addr.sin_addr));
+        Serial.print("msg_buffer: ");
         Serial.println(msg_buffer);
         Serial.println("***************************************************");
       }

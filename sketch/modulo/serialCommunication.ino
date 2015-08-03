@@ -49,7 +49,7 @@ void *readSerial(void *arg)
     {
       if(DEBUG == 2)
       {
-        Serial.println("not serial data available");
+        Serial.println("No serial data available");
       }
     }
     delay(100);  //if no data sleep for 100ms
@@ -57,8 +57,11 @@ void *readSerial(void *arg)
 }
 //################################################################################################
 //################################################################################################
-void sendData(byte output[], int modID, int packetLength)
+void sendDataToModule(byte output[], int modID, int packetLength)
 {
-
+  for(int i =0; i<packetLength; i++)
+  {
+    Serial1.write(output[i]);
+  }
 }
 //################################################################################################

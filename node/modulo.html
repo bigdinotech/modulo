@@ -62,6 +62,7 @@
 						<tr>
 							<td class="moduledatalabeltd">
 								<p>Speed:</p>
+								<p>Speed: <textarea class="datainput" id="controlmodulespeed" cols="1" maxlength="2" style="margin: 2px; width: 8px; height: 20px;"></textarea></p>
 							</td>
 							<td id="controlspeed" class="moduledatatd">
 							</td>
@@ -88,6 +89,63 @@
 					</table>
 	
 				</form>
+			</td>
+		</tr>
+		<tr>
+			<td id="thermostatmodule">
+				<form method="post" name="ThermostatForm" target="_self">
+					<form method="post" name="OutdoorForm" target="_self">
+					<table id="outdoormoduletable">
+						<tr>
+							<th colspan=2 align=center>
+								<p>Outdoor Module</p>
+							</th>
+						</tr>
+						<tr>
+							<td class="moduledatalabeltd">
+								<p>Temperature:</p>
+							</td>
+							<td id="thermostattemperature" class="moduledatatd">
+							</td>
+						</tr>
+						<tr>
+							<td class="moduledatalabeltd">
+								<p>Humidity:</p>
+							</td>
+							<td id="thermostathumidity" class="moduledatatd">
+							</td>
+						</tr>
+						<tr>
+							<td class="moduledatalabeltd">
+								<p>Mode:</p>
+							</td>
+							<td id="thermostatmode" class="moduledatatd">
+							</td>
+						</tr>
+						<tr>
+							<td class="moduledatalabeltd">
+								<p>Target temperature:</p>
+							</td>
+							<td id="targetthermostattemperature" class="moduledatatd">
+							</td>
+						</tr>
+						<tr>
+							<td colspan=2>
+								<p>Mode Select:
+								Temp1: <textarea class="datainputarea" id="changetargetthermostattemperature" cols="1" maxlength="10" name="changetargetthermostattemperature"  style="margin: 2px; width: 40px; height: 20px;"></textarea>
+								Temp2: <textarea class="datainputarea" id="changetargetthermostattemperature2" cols="1" maxlength="10" name="changetargetthermostattemperature2"  style="margin: 2px; width: 40px; height: 20px;"></textarea>
+								<input id = "thermostatOffModeButton" type = "button" value = "Off" />
+								<input id = "thermostatCoolModeButton" type = "button" value = "Cool" />
+								<input id = "thermostatHeatModeButton" type = "button" value = "Heat" />
+								<input id = "thermostatAutoModeButton" type = "button" value = "Auto" />
+								</p>
+							</td>
+						</tr>
+					</table>
+					
+				</form>
+			</td>
+			<td>
 			</td>
 		</tr>
 		<tr>
@@ -260,7 +318,7 @@
 
 		for(i = 0; i < cmdPacket.length; i++)
 		{
-			cmdPacketString +=  cmdPacket[i] + " ";		
+			cmdPacketString +=  cmdPacket[i];		
 		}
 
 		cmdPacketString = cmdPacketString.trim();
@@ -289,17 +347,15 @@
 
 		for(i = 0; i < cmdPacket.length; i++)
 		{
-			cmdPacketString +=  cmdPacket[i] + " ";		
+			cmdPacketString +=  cmdPacket[i];	
 		}
-
-		cmdPacketString = cmdPacketString.trim();
+		//cmdPacketString = cmdPacketString.trim();
 		sendData(cmdPacketString);
 		console.log(cmdPacketString);
 	}
 
 	function sendData(packet)
 	{
-		packet += "*";
 		socket.emit("command", packet);
 	}
 
@@ -373,25 +429,66 @@
 		cmdPacket[cmdLength+3] = (cmdChecksum & 0xFF);
 		for(i = 0; i < cmdPacket.length; i++)
 		{
-			cmdPacketString +=  cmdPacket[i] + " ";
-			//cmdPacketString +=  String.fromCharCode(cmdPacket[i]);
-			//console.log((String.fromCharCode(cmdPacket[i])).charCodeAt(0));
-			
+			cmdPacketString +=  cmdPacket[i] + ' ';
 		}
-		cmdPacketString = cmdPacketString.trim();
+		//cmdPacketString = cmdPacketString.trim();
 		sendData(cmdPacketString);
 		console.log(cmdPacketString);
+		console.log("length: " + cmdPacketString.length);
 		//sendData(cmdPacket);
+		//console.log(cmdPacket);
 	}
 
+	function moveRobot(dir, spd)
+	{
+		var cmdPacket = [];
+		var cmdPacketString = "";
+		var cmdChecksum = 0;
+		var modID = 1;
+		var cmdLength = 2;
+		//var dir = 'w';
+		//var spd = 3;
+
+		cmdChecksum += (modID & 0xFF);
+		cmdChecksum += (cmdLength & 0xFF);
+		cmdChecksum += (dir.charCodeAt(0) & 0xFF);
+		cmdChecksum += (spd & 0xFF);
+		cmdPacket[cmdLength+3] = (cmdChecksum & 0xFF);
+
+		cmdPacket[0] = (headerValue & 0xFF);
+		cmdPacket[1] = (modID & 0xFF);
+		cmdPacket[2] = (cmdLength & 0xFF);
+		cmdPacket[3] = (dir.charCodeAt(0) & 0xFF);
+		cmdPacket[4] = (spd & 0xFF);
+		cmdPacket[cmdLength+3] = (cmdChecksum & 0xFF);
+		
+		for(i = 0; i < cmdPacket.length; i++)
+		{
+			cmdPacketString +=  cmdPacket[i] + ' ';
+		}
+		sendData(cmdPacketString);
+		console.log(cmdPacketString);
+		console.log("length: " + cmdPacketString.length);
+	}
 	</script>
 	<script>
-		document.getElementById("toggleGarageDoor").onclick =  garageDoorButton;
-		document.getElementById("toggleGarageLight").onclick =  garageLightButton;
-		document.getElementById("thermostatOffModeButton").onclick =  thermostatOffButton;
+		document.getElementById("thermostatOffModeButton").onclick =  moveRobot;
 		document.getElementById("thermostatCoolModeButton").onclick =  thermostatCoolButton;
 		document.getElementById("thermostatHeatModeButton").onclick =  thermostatHeatButton;
 		document.getElementById("thermostatAutoModeButton").onclick =  thermostatAutoButton;
+	</script>
+	<script>
+		document.addEventListener('keydown', function(event) 
+		{
+			console.log("which code: " + event.which);
+			var keyCode = event.which;
+			var keyChar = String.fromCharCode(keyCode);
+			if((keyChar == 'W') || (keyChar == 'A') || (keyChar == 'S') || (keyChar == 'D') || (keyChar == 'Q') || (keyChar == 'E') || (keyChar == 'Z') || (keyChar == 'C') || (keyChar == 'X') || (keyChar == 'O'))
+			{
+				console.log("char: " + keyChar);
+				moveRobot(keyChar.toLowerCase(), 4);
+			}
+		});
 	</script>
 </body>
 

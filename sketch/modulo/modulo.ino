@@ -26,7 +26,7 @@ struct moduleData
 };
 
 // debugging
-int DEBUG  = 1;                // 1 to see the debug messages in the serial console, or 0 to disable
+int DEBUG  = 3;                // 1 to see the debug messages in the serial console, or 0 to disable
 
 //UDP server stuff
 struct sockaddr_in my_addr, cli_addr;
